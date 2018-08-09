@@ -1,0 +1,63 @@
+# Install Certificate tasks - main.yml
+---
+- name: create certificate directory
+  file:
+    path: /etc/ssl-certificates
+    owner: root
+    group: root
+    mode: 0755
+
+- name: create certificate directory
+  file:
+    path: "/etc/ssl-certificates/{{ cert_name }}"
+    state: directory
+    owner: root
+    group: root
+    mode: 0700
+
+- name: copy cert to remote
+  copy:
+    src: "{{ cert_local_path }}"
+    dest: "/etc/ssl-certificates/{{ cert_name }}/{{ cert_name }}.pem"
+    owner: root
+    group: root
+    mode: 0644
+    backup: "{{ backup_original_files }}"
+
+- name: copy private key to remote
+  copy:
+    src: "{{ privkey_local_path }}"
+    dest: "/etc/ssl-certificates/{{ cert_name }}/{{ cert_name }}.key"
+    owner: root
+    group: root
+    mode: 0644
+    backup: "{{ backup_original_files }}"
+
+- name: copy cert chain to remote
+  copy:
+    src: "{{ chain_local_path }}"
+    dest: "/etc/ssl-certificates/{{ cert_name }}/{{ cert_name }}.chain.pem"
+    owner: root
+    group: root
+    mode: 0644
+    backup: "{{ backup_original_files }}"
+  when: chain_local_path is defined
+
+- name: copy full cert chain to remote
+  copy:
+    src: "{{ full_chain_local_path }}"
+    dest: "/etc/ssl-certificates/{{ cert_name }}/{{ cert_name }}.crt"
+    owner: root
+    group: root
+    mode: 0644
+    backup: "{{ backup_original_files }}"
+  when: full_chain_local_path is defined
+
+- name: combine cert and chain files to new .crt file
+  shell: "cat /etc/ssl-certificates/{{ cert_name }}/{{ cert_name }}.pem \
+          /etc/ssl-certificates/{{ cert_name }}/{{ cert_name }}.chain.pem \
+          > /etc/ssl-certificates/{{ cert_name }}/{{ cert_name }}.crt"
+  when:
+    - full_chain_local_path is not defined
+    - chain_local_path is defined
+    - (copy_cert.changed) or (copy_chain.changed)
