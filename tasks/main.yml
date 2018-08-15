@@ -1,8 +1,14 @@
 # Install Certificate tasks - main.yml
 ---
+- name: generate Diffie-Hellman group
+  command: openssl dhparam -out /etc/ssl/certs/dhparam.pem {{ diffie_hellman_size }}
+  args:
+    creates: /etc/ssl/certs/dhparam.pem
+
 - name: create certificate directory
   file:
     path: /etc/ssl-certificates
+    state: directory
     owner: root
     group: root
     mode: 0755
@@ -23,6 +29,7 @@
     group: root
     mode: 0644
     backup: "{{ backup_original_files }}"
+  register: copy_cert
 
 - name: copy private key to remote
   copy:
@@ -32,6 +39,7 @@
     group: root
     mode: 0644
     backup: "{{ backup_original_files }}"
+  register: copy_privkey
 
 - name: copy cert chain to remote
   copy:
@@ -42,6 +50,7 @@
     mode: 0644
     backup: "{{ backup_original_files }}"
   when: chain_local_path is defined
+  register: copy_chain
 
 - name: copy full cert chain to remote
   copy:
@@ -60,4 +69,4 @@
   when:
     - full_chain_local_path is not defined
     - chain_local_path is defined
-    - (copy_cert.changed) or (copy_chain.changed)
+    - (copy_cert is changed) or (copy_chain is changed)

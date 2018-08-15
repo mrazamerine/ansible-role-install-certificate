@@ -1,3 +1,5 @@
 # Install Certificate defaults - main.yml
 ---
 backup_original_files: false
+
+diffie_hellman_size: 2048
